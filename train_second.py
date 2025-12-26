@@ -20,7 +20,6 @@ from meldataset import build_dataloader
 
 from Utils.ASR.models import ASRCNN
 from Utils.JDC.model import JDCNet
-from Utils.PLBERT.util import load_plbert
 
 from models import *
 from losses import *
@@ -89,7 +88,7 @@ def main(config_path):
     optimizer_params = Munch(config['optimizer_params'])
     
     train_list, val_list = get_data_path_list(train_path, val_path)
-    device = 'cuda'
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     train_dataloader = build_dataloader(train_list,
                                         root_path,
@@ -121,6 +120,10 @@ def main(config_path):
     
     # load PL-BERT model
     BERT_path = config.get('PLBERT_dir', False)
+    if 'PLBERT_fa' in BERT_path:
+        from Utils.PLBERT_fa.util import load_plbert
+    else:
+        from Utils.PLBERT.util import load_plbert
     plbert = load_plbert(BERT_path)
     
     # build model
@@ -220,7 +223,8 @@ def main(config_path):
     iters = 0
     
     criterion = nn.L1Loss() # F0 loss (regression)
-    torch.cuda.empty_cache()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
     
     stft_loss = MultiResolutionSTFTLoss().to(device)
     
@@ -576,7 +580,7 @@ def main(config_path):
                     batch = [b.to(device) for b in batch[1:]]
                     texts, input_lengths, ref_texts, ref_lengths, mels, mel_input_length, ref_mels = batch
                     with torch.no_grad():
-                        mask = length_to_mask(mel_input_length // (2 ** n_down)).to('cuda')
+                        mask = length_to_mask(mel_input_length // (2 ** n_down)).to(device)
                         text_mask = length_to_mask(input_lengths).to(texts.device)
 
                         _, _, s2s_attn = model.text_aligner(mels, mask, texts)

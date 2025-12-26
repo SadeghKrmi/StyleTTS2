@@ -108,8 +108,11 @@ def main(config_path):
         pitch_extractor = load_F0_models(F0_path)
 
         # load BERT model
-        from Utils.PLBERT.util import load_plbert
         BERT_path = config.get('PLBERT_dir', False)
+        if 'PLBERT_fa' in BERT_path:
+            from Utils.PLBERT_fa.util import load_plbert
+        else:
+            from Utils.PLBERT.util import load_plbert
         plbert = load_plbert(BERT_path)
 
     scheduler_params = {
@@ -183,7 +186,7 @@ def main(config_path):
             texts, input_lengths, _, _, mels, mel_input_length, _ = batch
             
             with torch.no_grad():
-                mask = length_to_mask(mel_input_length // (2 ** n_down)).to('cuda')
+                mask = length_to_mask(mel_input_length // (2 ** n_down)).to(device)
                 text_mask = length_to_mask(input_lengths).to(texts.device)
 
             ppgs, s2s_pred, s2s_attn = model.text_aligner(mels, mask, texts)
@@ -336,7 +339,7 @@ def main(config_path):
                 texts, input_lengths, _, _, mels, mel_input_length, _ = batch
 
                 with torch.no_grad():
-                    mask = length_to_mask(mel_input_length // (2 ** n_down)).to('cuda')
+                    mask = length_to_mask(mel_input_length // (2 ** n_down)).to(device)
                     ppgs, s2s_pred, s2s_attn = model.text_aligner(mels, mask, texts)
 
                     s2s_attn = s2s_attn.transpose(-1, -2)
@@ -368,7 +371,7 @@ def main(config_path):
                     en.append(asr[bib, :, random_start:random_start+mel_len])
                     gt.append(mels[bib, :, (random_start * 2):((random_start+mel_len) * 2)])
                     y = waves[bib][(random_start * 2) * 300:((random_start+mel_len) * 2) * 300]
-                    wav.append(torch.from_numpy(y).to('cuda'))
+                    wav.append(torch.from_numpy(y).to(device))
 
                 wav = torch.stack(wav).float().detach()
 
