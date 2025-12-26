@@ -11,6 +11,7 @@ PLBERT Fa config and model trained according to [PL-BERT](https://github.com/Sad
 ```bash
 # The -U flag tells screen to use UTF-8 mode, which is better for Persian text
 screen -U -S training
+screen -r -U training
 ```
 
 ```bash
@@ -22,6 +23,9 @@ apt-get install -y libsndfile1
 ```bash
 python train_first.py --config_path Configs/config_fa.yml
 ```
+
+after training the first stage, you can run the second stage, with updated config file `first_stage_path: "epoch_1st_00000.pth"
+`
 
 ```bash
 python train_second.py --config_path Configs/config_fa.yml
