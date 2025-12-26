@@ -1,3 +1,37 @@
+# StyleTTS 2 for Persian
+
+PLBERT Fa config and model trained according to [PL-BERT](https://github.com/SadeghKrmi/PL-BERT)
+
+- Copy the model and config from HF [Persian-PL-BERT](https://huggingface.co/SadeghK/Persian-PL-BERT/tree/main) into `Utils/PLBERT_fa/` and rename it to `step_305000_loss-1.4_val_loss-0.35_token_loss-1.2.t7`
+
+
+- Copy the dataset into `Data/resampled/`
+
+
+```bash
+# The -U flag tells screen to use UTF-8 mode, which is better for Persian text
+screen -U -S training
+```
+
+```bash
+apt-get update
+apt-get install -y libsndfile1
+```
+
+
+```bash
+python train_first.py --config_path Configs/config_fa.yml
+```
+
+```bash
+python train_second.py --config_path Configs/config_fa.yml
+```
+
+---
+
+
+
+
 # StyleTTS 2: Towards Human-Level Text-to-Speech through Style Diffusion and Adversarial Training with Large Speech Language Models
 
 ### Yinghao Aaron Li, Cong Han, Vinay S. Raghavan, Gavin Mischler, Nima Mesgarani
