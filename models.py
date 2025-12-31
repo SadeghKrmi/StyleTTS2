@@ -693,15 +693,49 @@ def build_model(args, text_aligner, pitch_extractor, bert):
     
     return nets
 
+
 def load_checkpoint(model, optimizer, path, load_only_params=True, ignore_modules=[]):
-    state = torch.load(path, map_location='cpu', weights_only=False)
+    state = torch.load(path, map_location='cpu')
     params = state['net']
+
     for key in model:
         if key in params and key not in ignore_modules:
             print('%s loaded' % key)
-            model[key].load_state_dict(params[key], strict=False)
+            
+            ckpt_state_dict = params[key]
+            try:
+                model[key].load_state_dict(ckpt_state_dict, strict=True)
+            except RuntimeError:
+                # Try adding 'module.' prefix (Source: Single, Target: DP)
+                new_state_dict = {}
+                for k, v in ckpt_state_dict.items():
+                    new_state_dict['module.' + k] = v
+                
+                try:
+                    model[key].load_state_dict(new_state_dict, strict=True)
+                    print(f"Loaded {key} with 'module.' prefix addition.")
+                    continue
+                except RuntimeError:
+                    pass
+
+                # Try removing 'module.' prefix (Source: DP, Target: Single)
+                new_state_dict = {}
+                for k, v in ckpt_state_dict.items():
+                    if k.startswith('module.'):
+                        new_state_dict[k[7:]] = v
+                    else:
+                        new_state_dict[k] = v 
+                
+                try:
+                    model[key].load_state_dict(new_state_dict, strict=True)
+                    print(f"Loaded {key} with 'module.' prefix removal.")
+                    continue
+                except RuntimeError as e:
+                    print(f"Failed to load {key} even after prefix adjustment.")
+                    raise e
+                    
     _ = [model[key].eval() for key in model]
-    
+
     if not load_only_params:
         epoch = state["epoch"]
         iters = state["iters"]
@@ -709,5 +743,5 @@ def load_checkpoint(model, optimizer, path, load_only_params=True, ignore_module
     else:
         epoch = 0
         iters = 0
-        
+
     return model, optimizer, epoch, iters

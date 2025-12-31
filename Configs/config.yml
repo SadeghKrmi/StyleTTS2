@@ -1,5 +1,5 @@
 log_dir: "Models/LJSpeech"
-first_stage_path: "first_stage.pth"
+first_stage_path: "epoch_1st_00054.pth"
 save_freq: 2
 log_interval: 10
 device: "cuda"
@@ -101,8 +101,8 @@ loss_params:
     joint_epoch: 50 # joint training starting epoch (2nd stage)
 
 optimizer_params:
-  lr: 0.0001 # general learning rate
-  bert_lr: 0.00001 # learning rate for PLBERT
+  lr: 0.00001 # general learning rate
+  bert_lr: 0.000005 # learning rate for PLBERT
   ft_lr: 0.00001 # learning rate for acoustic modules
   
 slmadv_params:

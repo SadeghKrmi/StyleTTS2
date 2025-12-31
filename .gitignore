@@ -1,7 +1,7 @@
 # ignore all files in Checkpoint
 Data/resampled/
 Utils/PLBERT_fa/step_305000_loss-1.4_val_loss-0.35_token_loss-1.2.t7
-
+Models/LJSpeech/epoch_1st_00054.pth
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

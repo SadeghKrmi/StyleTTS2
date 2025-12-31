@@ -3,15 +3,31 @@
 PLBERT Fa config and model trained according to [PL-BERT](https://github.com/SadeghKrmi/PL-BERT)
 
 - Copy the model and config from HF [Persian-PL-BERT](https://huggingface.co/SadeghK/Persian-PL-BERT/tree/main) into `Utils/PLBERT_fa/` and rename it to `step_305000_loss-1.4_val_loss-0.35_token_loss-1.2.t7`
+- Copy the dataset into `Data/resampled/` and unzip
 
 
-- Copy the dataset into `Data/resampled/`
+### Setting the `max_len`
+`max_len` - this setting will tell the script how much of your WAV files data to process. The value is in frames and calculated as YOUR_MAX_WAV_FILE_LENGTH_IN_SECONDS / 0.0125 (i.e. if your longest WAV file is 10 seconds long, max_len will be 10 / 0.0125 = 800). Bear in mind that if you set this lower, only that amount of all your 10 second audio files will be considered for training. This may result in the model learning partial words or sentences, so it's generally advised to set max_len value to the full duration of your longest WAV files you're using for training.
+
+Configs for GPU `1x RTX PRO 6000 WS`, up to 95G VRAM usage / out of 96.7G:
+```yaml
+- batch_size: 16
+- max_len: <YOUR_MAX_WAV_FILE_LENGTH_IN_SECONDS / 0.0125> # maximum number of frames
+```
+
+
+If CUDA is not working properly, install cuda 12.8
+```bash
+pip cache purge && \
+pip uninstall -y torch torchvision torchaudio && \
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128 --force-reinstall --no-cache-dir --break-system-packages
+```
 
 
 ```bash
 # The -U flag tells screen to use UTF-8 mode, which is better for Persian text
 screen -U -S training
-screen -r -U training
+screen -U -r training
 ```
 
 ```bash
@@ -20,16 +36,51 @@ apt-get install -y libsndfile1
 ```
 
 
+### first stage training
+
 ```bash
 python train_first.py --config_path Configs/config_fa.yml
 ```
 
-after training the first stage, you can run the second stage, with updated config file `first_stage_path: "epoch_1st_00000.pth"
-`
+Using multiple GPUs only possibe in the first stage training.
+
+Until epoch 50, first stage only mel_loss is computed, after that additional validation steps kicks in, probably need to lower the batch size by a factor of 2.
+
+If first stage training failed, try to change config and resume the training from a specific checkpoint:
+```bash
+ls -lh Models/LJSpeech/epoch_1st_*.pth
+
+# update the config file
+pretrained_model: "Models/LJSpeech/epoch_1st_00010.pth"
+load_only_params: false  # This loads optimizer state + epoch counter too
+
+# Run training again
+python train_first.py --config_path Configs/config_fa.yml
+```
+
+
+### second stage training
+
+after training the first stage, you can run the second stage, with updated config file `first_stage_path`: "/path/to/epoch_1st_000xx.pth"
+
+If you're just starting a 2nd stage training, I'd change the config to:
+```yaml
+first_stage_path: "/path/to/epoch_1st_000xx.pth"
+pretrained_model: ""
+second_stage_load_pretrained: true # set to true if the pre-trained model is for 2nd stage
+load_only_params: false # set to true if do not want to load epoch numbers and optimizer parameters
+
+```
+
+After epoch 20, during the second stage additional validation steps kicks in, probably need to lower the batch size by a factors of 2.
+
+Change the save_freq to 1 as each epoch takes a lot of time.
 
 ```bash
 python train_second.py --config_path Configs/config_fa.yml
 ```
+
+
 
 ---
 
