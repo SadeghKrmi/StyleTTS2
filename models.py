@@ -701,39 +701,16 @@ def load_checkpoint(model, optimizer, path, load_only_params=True, ignore_module
     for key in model:
         if key in params and key not in ignore_modules:
             print('%s loaded' % key)
-            
-            ckpt_state_dict = params[key]
             try:
-                model[key].load_state_dict(ckpt_state_dict, strict=True)
-            except RuntimeError:
-                # Try adding 'module.' prefix (Source: Single, Target: DP)
-                new_state_dict = {}
-                for k, v in ckpt_state_dict.items():
-                    new_state_dict['module.' + k] = v
-                
-                try:
-                    model[key].load_state_dict(new_state_dict, strict=True)
-                    print(f"Loaded {key} with 'module.' prefix addition.")
-                    continue
-                except RuntimeError:
-                    pass
-
-                # Try removing 'module.' prefix (Source: DP, Target: Single)
-                new_state_dict = {}
-                for k, v in ckpt_state_dict.items():
-                    if k.startswith('module.'):
-                        new_state_dict[k[7:]] = v
-                    else:
-                        new_state_dict[k] = v 
-                
-                try:
-                    model[key].load_state_dict(new_state_dict, strict=True)
-                    print(f"Loaded {key} with 'module.' prefix removal.")
-                    continue
-                except RuntimeError as e:
-                    print(f"Failed to load {key} even after prefix adjustment.")
-                    raise e
-                    
+                model[key].load_state_dict(params[key], strict=True)
+            except:
+                from collections import OrderedDict
+                state_dict = params[key]
+                new_state_dict = OrderedDict()
+                print(f'{key} key length: {len(model[key].state_dict().keys())}, state_dict length: {len(state_dict.keys())}')
+                for (k_m, v_m), (k_c, v_c) in zip(model[key].state_dict().items(), state_dict.items()):
+                    new_state_dict[k_m] = v_c
+                model[key].load_state_dict(new_state_dict, strict=True)
     _ = [model[key].eval() for key in model]
 
     if not load_only_params:

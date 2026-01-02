@@ -61,6 +61,8 @@ python train_first.py --config_path Configs/config_fa.yml
 
 ### second stage training
 
+for second stage training, remove audioes under 1 secods, otherwise the training will fail.
+
 after training the first stage, you can run the second stage, with updated config file `first_stage_path`: "/path/to/epoch_1st_000xx.pth"
 
 If you're just starting a 2nd stage training, I'd change the config to:
@@ -69,15 +71,26 @@ first_stage_path: "/path/to/epoch_1st_000xx.pth"
 pretrained_model: ""
 second_stage_load_pretrained: true # set to true if the pre-trained model is for 2nd stage
 load_only_params: false # set to true if do not want to load epoch numbers and optimizer parameters
-
 ```
 
-After epoch 20, during the second stage additional validation steps kicks in, probably need to lower the batch size by a factors of 2.
+
+After epoch 20, during the second stage additional validation steps kicks in, probably need to lower the batch size by a factors of 2 (from 32 to 6)
 
 Change the save_freq to 1 as each epoch takes a lot of time.
 
 ```bash
-python train_second.py --config_path Configs/config_fa.yml
+python3 train_second.py --config_path Configs/config_fa.yml
+```
+
+After epoch 20, set batch size to 6 and resume training with the following config:
+
+
+If you're just starting a 2nd stage training, I'd change the config to:
+```yaml
+first_stage_path: "/path/to/epoch_1st_000xx.pth"
+pretrained_model: "Models/LJSpeech/epoch_2nd_00019.pth"
+second_stage_load_pretrained: true # set to true if the pre-trained model is for 2nd stage
+load_only_params: false # set to true if do not want to load epoch numbers and optimizer parameters
 ```
 
 
